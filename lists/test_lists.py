@@ -63,3 +63,13 @@ class HomePageTest(TestCase):
         request = HttpRequest()
         home_page(request)
         assert Item.objects.count() == 0
+
+    def test_home_page_displays_all_list_items(self):
+        Item.objects.create(text='itemey 1')
+        Item.objects.create(text='itemey 2')
+
+        request = HttpRequest()
+        response = home_page(request)
+
+        assert 'itemey 1' in response.content.decode()
+        assert 'itemey 2' in response.content.decode()
