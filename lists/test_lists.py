@@ -5,27 +5,37 @@ from django.http import HttpRequest
 from django.template.loader import render_to_string
 
 from lists.views import home_page
-from lists.models import Item
+from lists.models import Item, TodoList
 
 
-class ItemModelTest(TestCase):
+class ListAndItemModelTest(TestCase):
 
     def test_saving_and_retrieving_items(self):
+        list_ = TodoList()
+        list_.save()
+
         first_item = Item()
-        first_item.text = 'The first (ever) list item'
+        first_item.text = 'The first (ever) todo_list item'
+        first_item.todo_list = list_
         first_item.save()
 
         second_item = Item()
         second_item.text = 'Item the second'
+        second_item.todo_list = list_
         second_item.save()
+
+        saved_list = TodoList.objects.first()
+        assert saved_list == list_
 
         saved_items = Item.objects.all()
         assert saved_items.count() == 2
 
         first_saved_item = saved_items[0]
         second_saved_item = saved_items[1]
-        assert first_saved_item.text == 'The first (ever) list item'
+        assert first_saved_item.text == 'The first (ever) todo_list item'
+        assert first_saved_item.todo_list == list_
         assert second_saved_item.text == 'Item the second'
+        assert second_saved_item.todo_list == list_
 
 
 class HomePageTest(TestCase):
@@ -48,8 +58,9 @@ class ListViewTest(TestCase):
         self.assertTemplateUsed(response, 'list.html')
 
     def test_displays_all_items(self):
-        Item.objects.create(text='itemey 1')
-        Item.objects.create(text='itemey 2')
+        list_ = TodoList.objects.create()
+        Item.objects.create(text='itemey 1', todo_list=list_)
+        Item.objects.create(text='itemey 2', todo_list=list_)
 
         response = self.client.get('/lists/the-only-list-in-the-world/')
 

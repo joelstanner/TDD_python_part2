@@ -1,6 +1,6 @@
 # pylint: disable=F0401
 from django.shortcuts import redirect, render
-from lists.models import Item
+from lists.models import Item, TodoList
 
 
 def home_page(request):
@@ -13,5 +13,6 @@ def view_list(request):
 
 
 def new_list(request):
-    Item.objects.create(text=request.POST['item_text'])
+    list_ = TodoList.objects.create()
+    Item.objects.create(text=request.POST['item_text'], todo_list=list_)
     return redirect('/lists/the-only-list-in-the-world/')
