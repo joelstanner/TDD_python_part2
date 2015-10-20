@@ -54,19 +54,30 @@ class HomePageTest(TestCase):
 class ListViewTest(TestCase):
 
     def test_uses_list_template(self):
-        response = self.client.get('/lists/the-only-list-in-the-world/')
+        list_ = TodoList.objects.create()
+        response = self.client.get('/lists/{}/'.format(list_.id))
         self.assertTemplateUsed(response, 'list.html')
 
-    def test_displays_all_items(self):
-        list_ = TodoList.objects.create()
-        Item.objects.create(text='itemey 1', todo_list=list_)
-        Item.objects.create(text='itemey 2', todo_list=list_)
+    def test_displays_only_items_for_that_list(self):
+        correct_list = TodoList.objects.create()
+        Item.objects.create(text='itemey 1', todo_list=correct_list)
+        Item.objects.create(text='itemey 2', todo_list=correct_list)
+        other_list = TodoList.objects.create()
+        Item.objects.create(text='other list item 1', todo_list=other_list)
+        Item.objects.create(text='other list item 2', todo_list=other_list)
 
-        response = self.client.get('/lists/the-only-list-in-the-world/')
+        response = self.client.get('/lists/{}/'.format(correct_list.id))
 
         assert 'itemey 1' in response.content.decode()
         assert 'itemey 2' in response.content.decode()
+        assert 'other list item 1' not in response.content.decode()
+        assert 'other list item 2' not in response.content.decode()
 
+    def test_passes_correct_list_to_template(self):
+        other_list = TodoList.objects.create()
+        correct_list = TodoList.objects.create()
+        response = self.client.get('/lists/{}/'.format(correct_list.id))
+        assert response.context['todo_list'] == correct_list
 
 class NewListTest(TestCase):
 
@@ -81,5 +92,33 @@ class NewListTest(TestCase):
         response = self.client.post(
             '/lists/new', data={'item_text': 'A new list item'}
         )
+        new_list = TodoList.objects.first()
+        self.assertRedirects(response, '/lists/{}/'.format(new_list.id))
 
-        self.assertRedirects(response, '/lists/the-only-list-in-the-world/')
+
+class NewItemTest(TestCase):
+
+    def test_can_save_a_POST_request_to_an_existing_list(self):
+        other_list = TodoList.objects.create()
+        correct_list = TodoList.objects.create()
+
+        self.client.post(
+            '/lists/{}/add_item'.format(correct_list.id),
+            data={'item_text': 'A new item for an existing list'}
+        )
+
+        assert Item.objects.count() == 1
+        new_item = Item.objects.first()
+        assert new_item.text == 'A new item for an existing list'
+        assert new_item.todo_list == correct_list
+
+    def test_redirects_to_list_view(self):
+        other_list = TodoList.objects.create()
+        correct_list = TodoList.objects.create()
+
+        response = self.client.post(
+            '/lists/{}/add_item'.format(correct_list.id),
+            data={'item_text': 'A new item for an existing list'}
+        )
+
+        self.assertRedirects(response, '/lists/{}/'.format(correct_list.id))
