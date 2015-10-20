@@ -1,3 +1,4 @@
+# pylint: disable=C0103, C0111, R0201, R0903, F0401
 from django.core.urlresolvers import resolve
 from django.test import TestCase
 from django.http import HttpRequest
@@ -26,6 +27,7 @@ class ItemModelTest(TestCase):
         assert first_saved_item.text == 'The first (ever) list item'
         assert second_saved_item.text == 'Item the second'
 
+
 class HomePageTest(TestCase):
 
     def test_root_url_resolves_to_homepage_view(self):
@@ -37,32 +39,6 @@ class HomePageTest(TestCase):
         response = home_page(request)
         expected_html = render_to_string('home.html')
         assert response.content.decode() == expected_html
-
-    def test_home_page_can_save_a_POST_request(self):
-        request = HttpRequest()
-        request.method = 'POST'
-        request.POST["item_text"] = 'A new list item'
-
-        response = home_page(request)
-
-        assert Item.objects.count() == 1
-        new_item = Item.objects.first()
-        assert new_item.text == 'A new list item'
-
-    def test_home_page_redirects_after_POST(self):
-        request = HttpRequest()
-        request.method = 'POST'
-        request.POST["item_text"] = 'A new list item'
-
-        response = home_page(request)
-
-        assert response.status_code == 302
-        assert response['location'] == '/lists/the-only-list-in-the-world/'
-
-    def test_home_page_only_saves_items_when_necessary(self):
-        request = HttpRequest()
-        home_page(request)
-        assert Item.objects.count() == 0
 
 
 class ListViewTest(TestCase):
@@ -79,3 +55,20 @@ class ListViewTest(TestCase):
 
         assert 'itemey 1' in response.content.decode()
         assert 'itemey 2' in response.content.decode()
+
+
+class NewListTest(TestCase):
+
+    def test_saving_a_POST_request(self):
+        self.client.post('/lists/new', data={'item_text': 'A new list item'})
+
+        assert Item.objects.count() == 1
+        new_item = Item.objects.first()
+        assert new_item.text == 'A new list item'
+
+    def test_redirects_after_POST(self):
+        response = self.client.post(
+            '/lists/new', data={'item_text': 'A new list item'}
+        )
+
+        self.assertRedirects(response, '/lists/the-only-list-in-the-world/')
