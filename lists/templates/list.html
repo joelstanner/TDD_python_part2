@@ -1,22 +1,13 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+{% extends 'base.html' %}
 
-<html>
-<head>
-  <title>To-Do Lists</title>
-</head>
+{% block header_text %}Your To-Do list{% endblock %}
 
-<body>
-  <h1>Your To-Do List</h1>
-  <form method="POST" action="/lists/{{ todo_list.id }}/add_item">
-    <input name="item_text"
-           id="id_new_item"
-           placeholder="Enter a to-do item" />
-    {% csrf_token %}
-  </form>
-  <table id="id_list_table">
-    {% for item in todo_list.item_set.all %}
-      <tr><td>{{ forloop.counter }}: {{ item.text }}</td></tr>
-    {% endfor %}
-  </table>
-</body>
-</html>
+{% block form_action %}/lists/{{ todo_list.id }}/add_item{% endblock %}
+
+{% block table %}
+    <table id="id_list_table">
+        {% for item in todo_list.item_set.all %}
+            <tr><td>{{ forloop.counter }}: {{ item.text }}</td></tr>
+        {% endfor %}
+    </table>
+{% endblock %}
