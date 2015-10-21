@@ -5,7 +5,7 @@
 {% block form_action %}/lists/{{ todo_list.id }}/add_item{% endblock %}
 
 {% block table %}
-    <table id="id_list_table">
+    <table id="id_list_table" class="table">
         {% for item in todo_list.item_set.all %}
             <tr><td>{{ forloop.counter }}: {{ item.text }}</td></tr>
         {% endfor %}
